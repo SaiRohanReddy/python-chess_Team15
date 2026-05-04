@@ -168,7 +168,7 @@ class TestTurnLogic:
         color = game.board.turn
         assert color == chess.BLACK 
 
-class TestStandardChessRules:
+class TestPieceMovement:
     def test_piece_movement_works(self):
         """test that you can move a piece"""
         game = SpellChessGame()
