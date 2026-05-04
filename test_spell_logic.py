@@ -192,7 +192,7 @@ class TestCheck:
 
         assert game.board.is_check() is True
 
-class TestCheckmate:
+class TestCheckmate2:
     """test if the game can recognize a checkmate"""
     def test_checkmate2(self):
         game = SpellChessGame()
@@ -210,7 +210,8 @@ class TestCheckmate:
         assert outcome is not None
         assert outcome.winner == chess.WHITE
         assert outcome.termination == chess.Termination.CHECKMATE
-    
+
+class TestCheckmate:
     def test_checkmate(self):
         game = SpellChessGame()
         #set up checkmate
