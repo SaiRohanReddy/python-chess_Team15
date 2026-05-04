@@ -179,8 +179,9 @@ class TestStandardChessRules:
         assert game.board.piece_at(chess.E4).piece_type == chess.PAWN #check that it now has a pawn at E4
         assert game.board.piece_at(chess.E4).color == chess.WHITE
 
+class TestCheck:
+    """test if the game can detect a check"""
     def test_check_is_detected(self):
-        """test if the game can detect a check"""
         game = SpellChessGame()
         game.board.clear_board()
         #set up a check
