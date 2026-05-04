@@ -216,15 +216,15 @@ class TestCheckmate:
         game = SpellChessGame()
         #set up checkmate
         game.board.clear_board()
-        game.board.set_piece_at(chess.G7, chess.Piece(chess.QUEEN, chess.WHITE))
-        game.board.set_piece_at(chess.F6, chess.Piece(chess.KING, chess.WHITE))
-        game.board.set_piece_at(chess.H8, chess.Piece(chess.KING, chess.BLACK))
-        game.board.turn = chess.BLACK
+        game.board.set_piece_at(chess.G7, chess.Piece(chess.QUEEN, chess.BLACK))
+        game.board.set_piece_at(chess.F6, chess.Piece(chess.KING, chess.BLACK))
+        game.board.set_piece_at(chess.H8, chess.Piece(chess.KING, chess.WHITE))
+        game.board.turn = chess.WHITE
         #check if the game recognizes a checkmate
         assert game.is_game_over() == True
         outcome = game.outcome()
         assert outcome is not None
-        assert outcome.winner == chess.WHITE
+        assert outcome.winner == chess.BLACK
         assert outcome.termination == chess.Termination.CHECKMATE
 
 class TestCaptures:
@@ -237,6 +237,7 @@ class TestCaptures:
         game.board.turn = chess.WHITE #manualy change the turn since changing turns is bugged
         assert game.make_move(chess.E4, chess.D5)
         assert game.board.piece_at(chess.D5).piece_type == chess.PAWN
+        assert game.board.piece_at(chess.D5).color == chess.WHITE
         #check that it no longer still has a black pawn there
         #move the white pawn out of the way
         game.board.turn = chess.WHITE
