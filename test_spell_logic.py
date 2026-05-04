@@ -263,9 +263,10 @@ class TestJumpDisplay:
         game.board.turn = chess.WHITE
 
         assert game.jump_info_text() == "Jump: 2  (cooldown 2)"
+
 class TestFreezeSpellCastling: 
-    def test_castling_frezze_in_middle(self): 
-       """Calling Frezze Spell should be affect 3x3 area which will 9 squares total in middle area"""
+    """Calling Frezze Spell should be affect 3x3 area which will 9 squares total in middle area"""
+    def test_castling_frezze_in_middle(self):
         game = SpellChessGame()
         game.cast_freeze(chess.E5)
         expected = { 
