@@ -44,8 +44,8 @@ class TestNewGameResetsBoard:
 #  If a test fails, you've found a bug — document it!                 #
 # ------------------------------------------------------------------ #
 class TestFreezeSpellCastling: 
-    """Calling Frezze Spell should be affect 3x3 area which will 9 squares total in middle area"""
     def test_castling_frezze_in_middle(self): 
+       """Calling Frezze Spell should be affect 3x3 area which will 9 squares total in middle area"""
         game = SpellChessGame()
         game.cast_freeze(chess.E5)
         expected = { 
@@ -243,3 +243,288 @@ class TestFreezeNewGame:
         assert not game.spell_casted_this_turn
         assert not game.freeze_targeting
         
+
+class TestFreezeChargesStart:
+    """Each user should start the game with 5 freeze charges"""
+    def test_freeze_charges_start(self):
+        game = SpellChessGame()
+        assert game.freeze_remaining[chess.WHITE] == 5
+        assert game.freeze_remaining[chess.BLACK] == 5
+
+class TestFreezeChargesDecrement:
+    """Each cast costs 1 charge"""
+    def test_freeze_charges_decrement(self):
+        game = SpellChessGame()
+        success = game.cast_freeze(chess.E5) 
+        assert success == True #check that freeze was cast properly
+        assert game.freeze_remaining[chess.WHITE] == 4
+        assert game.freeze_remaining[chess.BLACK] == 5 #check that black was not decremented
+
+class TestFreezeChargesNoCharges:
+    """When a player has 0 charges left they cannot cast freeze"""
+    def test_freeze_charges_no_charges(self):
+        game = SpellChessGame()
+        game.freeze_remaining[chess.WHITE] = 0 
+        game.freeze_remaining[chess.BLACK] = 0
+        success = game.cast_freeze(chess.E5)
+        assert success == False #check that it did not cast
+
+class TestFreezeCooldownStart:
+    """After freeze spell is cast, the caster enters a 3 turn cooldown"""
+    def test_freeze_cooldown_start(self):
+        game = SpellChessGame()
+        success = game.cast_freeze(chess.E5)
+        assert success == True #check that cooldown was cast properly
+        assert game.freeze_cooldown[chess.WHITE] == 3
+        assert game.freeze_cooldown[chess.BLACK] == 0 #check that blacks cooldown remains at 0
+
+class TestFreezeCooldownDecrement:
+    """The cooldown decrements by 1 at the start of each of the caster's turns"""
+    def test_freeze_cooldown_decrement(self):
+        game = SpellChessGame()
+        success = game.cast_freeze(chess.G2)
+        cooldown = game.freeze_cooldown[chess.WHITE] #store starting cooldown amount
+        assert success == True #check that freeze was cast properly
+        success = game.make_move(chess.D2, chess.D4) #perform a turn
+        assert success == True #check that turn was performed properly
+        success = game.make_move(chess.A2, chess.A4) #perfrorm a turn
+        assert success == True #check that turn was performed properly
+        success = game.make_move(chess.B2, chess.B4) #perfrom a turn
+        assert success == True #check that turn was performed properly
+        success = game.make_move(chess.C2, chess.C4) #perfrom a turn
+        assert success == True #check that turn was performed properly
+        assert game.freeze_cooldown[chess.WHITE] < (cooldown) #check that cooldown is lower than it used to be
+
+class TestFreezeCooldownRecast:
+    """The caster cannot Freeze again until the cooldown reaches 0"""
+    def test_freeze_cooldown_recast(self):
+        game = SpellChessGame()
+        success = game.cast_freeze(chess.G7)#white cast freeze
+        assert success == True #check that freeze was cast properly
+        success = game.make_move(chess.E2, chess.E4) #perfrom a move
+        assert success == True #check that turn was performed properly
+        success = game.make_move(chess.F2, chess.F4)#perfrom a move
+        assert success == True #check that turn was performed properly
+        assert game.freeze_cooldown[chess.WHITE] > 0 #make sure cooldwon is still above 0
+        success = game.cast_freeze(chess.E5)#cast freeze
+        assert success == False #check that freeze was not cast
+
+class TestJumpNewGameResetCharges:
+    """Starting a new game should reset the jump charges for both sides"""
+    def test_jump_new_game_reset_charges(self):
+        game = SpellChessGame()
+        game.jump_remaining[chess.WHITE] = 2 #decrement charges
+        game.jump_remaining[chess.BLACK] = 1 #decrement charges
+        game.new_game() #new game
+        assert game.jump_remaining[chess.WHITE] == 3 
+        #check that charges were reset
+        assert game.jump_remaining[chess.BLACK] == 3
+
+class TestJumpNewGameResetCooldown:
+    """Starting a new game should reset the jump charges for both sides"""
+    def test_jump_new_game_reset_cooldown(self):
+        game = SpellChessGame()
+        game.jump_cooldown[chess.WHITE] = 1 #set cooldown
+        game.jump_cooldown[chess.BLACK] = 1 #set cooldown
+        game.new_game()
+        #check that charges were reset
+        assert game.jump_cooldown[chess.WHITE] == 0
+        assert game.jump_cooldown[chess.BLACK] == 0
+
+class TestJumpChargesStart:
+    """Each user should start the game with 3 jump charges"""
+    def test_jump_charges_start(self):
+        game = SpellChessGame()
+        assert game.jump_remaining[chess.WHITE] == 3
+        assert game.jump_remaining[chess.BLACK] == 3
+
+class TestJumpChargesDecrement:
+    """Each cast costs 1 charge"""
+    def test_jump_charges_decrement(self):
+        game = SpellChessGame()
+        success = game.cast_jump(chess.E2, chess.E5)
+        assert success == True #check that jump was cast successfully
+        assert game.jump_remaining[chess.WHITE] == 2
+        assert game.jump_remaining[chess.BLACK] == 3 #check that black did not get decremented
+
+class TestJumpChargesNoCharges:
+    """When a player has 0 charges left they cannot cast freeze"""
+    def test_jump_charges_no_charges(self):
+        game = SpellChessGame()
+        #set charges to 0
+        game.jump_remaining[chess.WHITE] = 0
+        game.jump_remaining[chess.BLACK] = 0
+        success = game.cast_jump(chess.E2, chess.E5)
+        assert success == False #check that it did not cast jump
+
+
+
+class TestTurnLogic:
+    """Game should switch to other players turn after move"""
+    def test_turn_logic(self):
+        game = SpellChessGame()
+        success = game.make_move(chess.E2, chess.E4) #white move
+        assert success == True #make sure that the move went through properly
+        color = game.board.turn
+        assert color == chess.BLACK 
+
+class TestPieceMovement:
+    def test_piece_movement_works(self):
+        """test that you can move a piece"""
+        game = SpellChessGame()
+
+        assert game.make_move(chess.E2, chess.E4) is True
+
+        assert game.board.piece_at(chess.E2) is None #check that it no longer has a piece at E2
+        assert game.board.piece_at(chess.E4).piece_type == chess.PAWN #check that it now has a pawn at E4
+        assert game.board.piece_at(chess.E4).color == chess.WHITE
+
+class TestCheck:
+    """test if the game can detect a check"""
+    def test_check_is_detected(self):
+        game = SpellChessGame()
+        game.board.clear_board()
+        #set up a check
+        game.board.set_piece_at(chess.E1, chess.Piece(chess.KING, chess.WHITE))
+        game.board.set_piece_at(chess.E8, chess.Piece(chess.KING, chess.BLACK))
+        game.board.set_piece_at(chess.E7, chess.Piece(chess.ROOK, chess.WHITE))
+        game.board.turn = chess.BLACK
+
+        assert game.board.is_check() is True
+
+class TestCheckmate2:
+    """test if the game can recognize a checkmate"""
+    def test_checkmate2(self):
+        game = SpellChessGame()
+        #set up checkamte
+        game.board.clear_board()
+        game.board.set_piece_at(chess.A8, chess.Piece(chess.KING, chess.BLACK))
+        game.board.set_piece_at(chess.E7, chess.Piece(chess.QUEEN, chess.WHITE))
+        game.board.set_piece_at(chess.H1, chess.Piece(chess.KING, chess.WHITE))
+        game.board.set_piece_at(chess.B3, chess.Piece(chess.ROOK, chess.WHITE))
+        game.board.set_piece_at(chess.C8, chess.Piece(chess.ROOK, chess.WHITE))
+        game.board.turn = chess.BLACK
+        #check if the game recognizes a checkmate
+        assert game.is_game_over() == True
+        outcome = game.outcome()
+        assert outcome is not None
+        assert outcome.winner == chess.WHITE
+        assert outcome.termination == chess.Termination.CHECKMATE
+
+class TestCheckmate:
+    def test_checkmate(self):
+        game = SpellChessGame()
+        #set up checkmate
+        game.board.clear_board()
+        game.board.set_piece_at(chess.G7, chess.Piece(chess.QUEEN, chess.BLACK))
+        game.board.set_piece_at(chess.F6, chess.Piece(chess.KING, chess.BLACK))
+        game.board.set_piece_at(chess.H8, chess.Piece(chess.KING, chess.WHITE))
+        game.board.turn = chess.WHITE
+        #check if the game recognizes a checkmate
+        assert game.is_game_over() == True
+        outcome = game.outcome()
+        assert outcome is not None
+        assert outcome.winner == chess.BLACK
+        assert outcome.termination == chess.Termination.CHECKMATE
+
+class TestCaptures:
+    """test that captures work"""
+    def test_pawn_capture(self):
+        game = SpellChessGame()
+        assert game.make_move(chess.E2, chess.E4) == True
+        game.board.turn = chess.BLACK #manualy change the turn since changing turns is bugged
+        assert game.make_move(chess.D7, chess.D5) == True
+        game.board.turn = chess.WHITE #manualy change the turn since changing turns is bugged
+        assert game.make_move(chess.E4, chess.D5)
+        assert game.board.piece_at(chess.D5).piece_type == chess.PAWN
+        assert game.board.piece_at(chess.D5).color == chess.WHITE
+        #check that it no longer still has a black pawn there
+        #move the white pawn out of the way
+        game.board.turn = chess.WHITE
+        assert game.make_move(chess.D5, chess.D6) == True
+        assert game.board.piece_at(chess.D5) == None
+
+class TestStalemates:
+    """check that the game recognizes stalemates"""
+    def test_stalemate(self):
+        game = SpellChessGame()
+        #set up stalemate
+        game.board.clear_board()
+        game.board.set_piece_at(chess.H8, chess.Piece(chess.KING, chess.BLACK))
+        game.board.set_piece_at(chess.F7, chess.Piece(chess.KING, chess.WHITE))
+        game.board.set_piece_at(chess.G6, chess.Piece(chess.QUEEN, chess.WHITE))
+        game.board.turn = chess.BLACK
+        #check game end conditions
+        assert game.is_game_over() == True
+        outcome = game.outcome()
+        assert outcome is not None
+        assert outcome.winner == None
+        assert outcome.termination == chess.Termination.STALEMATE
+
+class TestCastling:
+    """check that the game properly performs castling"""
+    def test_castling_pawn(self):
+        game = SpellChessGame()
+        #move pieces out of the way
+        assert game.make_move(chess.G1, chess.H3) == True
+        assert game.make_move(chess.E2, chess.E4) == True
+        assert game.make_move(chess.F1, chess.E2) == True
+        #perform castle
+        assert game.make_move(chess.E1, chess.G1) == True
+        #check that pieces were moved to correct postitions and are correct color
+        assert game.board.piece_at(chess.G1).piece_type == chess.KING
+        assert game.board.piece_at(chess.F1).piece_type == chess.ROOK
+        assert game.board.piece_at(chess.G1).color == chess.WHITE
+        assert game.board.piece_at(chess.F1).color == chess.WHITE
+
+class TestEnPassant:
+    """test en passant special move"""
+    def test_en_passant(self):
+        game = SpellChessGame()
+        #move white pawn into position
+        assert game.make_move(chess.A2, chess.A4) == True
+        assert game.make_move(chess.A4, chess.A5) == True #still whites turn due to change color bug
+        game.board.turn = chess.BLACK #manually change color to black due to color change bug
+        assert game.make_move(chess.B7, chess.B5) == True #move black pawn into position
+        game.board.turn = chess.WHITE #manually change color to black due to color change bug
+        assert game.make_move(chess.A5, chess.B6) == True #perfrom en passant
+        #check board state
+        assert game.board.piece_at(chess.B5) == None
+        pawn = game.board.piece_at(chess.B6)
+        assert pawn is not None
+        assert pawn.piece_type == chess.PAWN
+        assert pawn.color == chess.WHITE
+
+class TestPawnPromotion:
+    """test pawn promotion special move"""
+    def test_pawn_promotion_queen(self):
+        game = SpellChessGame()
+        #move pieces out of the way
+        assert game.make_move(chess.H2, chess.H4) == True
+        assert game.make_move(chess.H1, chess.H3) == True
+        assert game.make_move(chess.H3, chess.F3) == True
+        game.board.turn = chess.BLACK
+        assert game.make_move(chess.G7, chess.G5) == True
+        game.board.turn = chess.WHITE
+        assert game.make_move(chess.H4, chess.G5) == True
+        #move black pawn to position
+        game.board.turn = chess.BLACK
+        assert game.make_move(chess.H7, chess.H5) == True
+        assert game.make_move(chess.H5, chess.H4) == True
+        assert game.make_move(chess.H4, chess.H3) == True
+        assert game.make_move(chess.H3, chess.H2) == True
+
+        assert game.make_move(chess.H2, chess.H1, promotion=chess.QUEEN) == True #perform the promotion
+        piece = game.board.piece_at(chess.H1)
+        assert piece is not None
+        assert piece.piece_type == chess.QUEEN
+        assert piece.color == chess.BLACK
+        #check that pawn is no longer there
+        assert game.make_move(chess.H1, chess.H2) == True
+        assert game.board.piece_at(chess.H1) is None
+
+
+
+
+
+
